@@ -1,0 +1,36 @@
+@api_HostAddress = http://localhost:5066
+
+GET {{api_HostAddress}}/api/tarefas
+Accept: application/json
+
+###
+
+GET {{api_HostAddress}}/api/tarefas/1
+Accept: application/json
+
+###
+
+POST {{api_HostAddress}}/api/tarefas
+Content-Type: application/json
+
+{
+	"titulo": "Estudar ASP.NET Core",
+	"descricao": "Ler documentacao de EF Core",
+	"status": "Pendente"
+}
+
+###
+
+PUT {{api_HostAddress}}/api/tarefas/1
+Content-Type: application/json
+
+{
+	"titulo": "Estudar ASP.NET Core",
+	"descricao": "Atualizar anotacoes",
+	"status": "Concluida"
+}
+
+###
+
+DELETE {{api_HostAddress}}/api/tarefas/1
+Accept: application/json
