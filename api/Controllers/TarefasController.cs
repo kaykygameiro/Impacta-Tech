@@ -48,7 +48,7 @@ public class TarefasController : ControllerBase
     {
         if (!TryNormalizeStatus(dto.Status, out var status))
         {
-            return BadRequest("Status deve ser 'Pendente' ou 'Concluida'.");
+            return BadRequest("Status deve ser 'Pendente' ou 'Concluída'.");
         }
 
         var tarefa = new Tarefa
@@ -76,7 +76,7 @@ public class TarefasController : ControllerBase
 
         if (!TryNormalizeStatus(dto.Status, out var status))
         {
-            return BadRequest("Status deve ser 'Pendente' ou 'Concluida'.");
+            return BadRequest("Status deve ser 'Pendente' ou 'Concluída'.");
         }
 
         tarefa.Titulo = dto.Titulo;
@@ -117,9 +117,9 @@ public class TarefasController : ControllerBase
             return true;
         }
 
-        if (status.Equals("Concluida", StringComparison.OrdinalIgnoreCase))
+        if (status.Equals("Concluída", StringComparison.OrdinalIgnoreCase) || status.Equals("Concluida", StringComparison.OrdinalIgnoreCase))
         {
-            normalized = "Concluida";
+            normalized = "Concluída";
             return true;
         }
 

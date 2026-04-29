@@ -1,14 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
-import { TaskFormComponent } from './components/task-form/task-form.component';
-import { TaskListComponent } from './components/task-list/task-list.component';
-import { Tarefa, TarefaUpsert } from './models/tarefa';
+import { FormsModule } from '@angular/forms';
+import { Tarefa, TarefaStatus, TarefaUpsert } from './models/tarefa';
 import { TarefaService } from './services/tarefa.service';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, TaskFormComponent, TaskListComponent],
+  imports: [CommonModule, FormsModule],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
@@ -16,19 +15,28 @@ export class AppComponent implements OnInit {
   private readonly tarefaService = inject(TarefaService);
 
   tarefas: Tarefa[] = [];
-  selected: Tarefa | null = null;
+  form: TarefaUpsert = { titulo: '', descricao: '', status: 'Pendente' };
+  editing: Tarefa | null = null;
   loading = false;
   message: string | null = null;
   messageType: 'success' | 'error' = 'success';
   private messageTimeoutId: ReturnType<typeof setTimeout> | null = null;
+  readonly statusOptions: TarefaStatus[] = ['Pendente', 'Concluída'];
 
   ngOnInit(): void {
     this.loadTarefas();
   }
 
-  handleSave(payload: TarefaUpsert): void {
-    if (this.selected) {
-      this.updateTarefa(this.selected.id, payload);
+  handleSubmit(): void {
+    if (!this.form.titulo.trim()) {
+      this.showMessage('Informe o titulo da tarefa.', 'error');
+      return;
+    }
+
+    const payload = this.buildPayload();
+
+    if (this.editing) {
+      this.updateTarefa(this.editing.id, payload);
       return;
     }
 
@@ -36,16 +44,26 @@ export class AppComponent implements OnInit {
   }
 
   handleEdit(tarefa: Tarefa): void {
-    this.selected = tarefa;
+    this.editing = tarefa;
+    this.form = {
+      titulo: tarefa.titulo,
+      descricao: tarefa.descricao ?? '',
+      status: tarefa.status
+    };
   }
 
   handleCancelEdit(): void {
-    this.selected = null;
+    this.editing = null;
+    this.resetForm();
   }
 
-  handleDelete(id: number): void {
+  handleDelete(tarefa: Tarefa): void {
+    if (!confirm('Deseja excluir esta tarefa?')) {
+      return;
+    }
+
     this.loading = true;
-    this.tarefaService.delete(id).subscribe({
+    this.tarefaService.delete(tarefa.id).subscribe({
       next: () => {
         this.showMessage('Tarefa excluida com sucesso!', 'success');
         this.loadTarefas();
@@ -58,7 +76,7 @@ export class AppComponent implements OnInit {
   }
 
   handleToggleStatus(tarefa: Tarefa): void {
-    const novoStatus = tarefa.status === 'Pendente' ? 'Concluida' : 'Pendente';
+    const novoStatus: TarefaStatus = tarefa.status === 'Pendente' ? 'Concluída' : 'Pendente';
 
     this.updateTarefa(tarefa.id, {
       titulo: tarefa.titulo,
@@ -67,7 +85,7 @@ export class AppComponent implements OnInit {
     });
   }
 
-  private loadTarefas(): void {
+  loadTarefas(): void {
     this.loading = true;
     this.tarefaService.getAll().subscribe({
       next: (tarefas) => {
@@ -81,12 +99,26 @@ export class AppComponent implements OnInit {
     });
   }
 
+  formatDate(value: string): string {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return value;
+    }
+
+    return date.toLocaleString('pt-BR');
+  }
+
+  trackById(_: number, tarefa: Tarefa): number {
+    return tarefa.id;
+  }
+
   private createTarefa(payload: TarefaUpsert): void {
     this.loading = true;
     this.tarefaService.create(payload).subscribe({
       next: () => {
         this.showMessage('Tarefa criada com sucesso!', 'success');
-        this.selected = null;
+        this.editing = null;
+        this.resetForm();
         this.loadTarefas();
       },
       error: () => {
@@ -101,7 +133,8 @@ export class AppComponent implements OnInit {
     this.tarefaService.update(id, payload).subscribe({
       next: () => {
         this.showMessage('Tarefa atualizada com sucesso!', 'success');
-        this.selected = null;
+        this.editing = null;
+        this.resetForm();
         this.loadTarefas();
       },
       error: () => {
@@ -109,6 +142,26 @@ export class AppComponent implements OnInit {
         this.showMessage('Nao foi possivel atualizar a tarefa.', 'error');
       }
     });
+  }
+
+  private buildPayload(): TarefaUpsert {
+    const titulo = this.form.titulo.trim();
+    const descricaoRaw = this.form.descricao ?? '';
+    const descricao = descricaoRaw.toString().trim();
+
+    return {
+      titulo,
+      descricao: descricao.length > 0 ? descricao : null,
+      status: this.form.status
+    };
+  }
+
+  private resetForm(): void {
+    this.form = {
+      titulo: '',
+      descricao: '',
+      status: 'Pendente'
+    };
   }
 
   private showMessage(message: string, type: 'success' | 'error'): void {

@@ -27,7 +27,7 @@ Content-Type: application/json
 {
 	"titulo": "Estudar ASP.NET Core",
 	"descricao": "Atualizar anotacoes",
-	"status": "Concluida"
+	"status": "Concluída"
 }
 
 ###
